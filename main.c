@@ -3,17 +3,24 @@
 #include <unistd.h>
 #include <string.h>
 
+#include <SDL2/SDL.h>
+
 #define PRG_START 0x200
 #define RAM_END   0xFFF
+
+#define WINDOW_WIDTH  640
+#define WINDOW_HEIGHT 320
 
 #define CPU_CLOCK 100  // ms
 
 uint8_t  memory[RAM_END + 1];
-uint16_t pc;         // program counter, an index of memory
+uint16_t pc;	     // program counter, an index of memory
 uint16_t reg_I;      // index register, an index of memory
 uint8_t  reg_V[16];  // variable registers
 
-uint64_t display[32];
+uint64_t     display[32];
+SDL_Window   *window;
+SDL_Renderer *renderer;
 
 // TODO: implement the following
 //uint16_t stack[16];
@@ -22,7 +29,7 @@ uint64_t display[32];
 //uint8_t  sound_timer;
 //uint8_t  key[16];
 
-static uint16_t opcode;
+uint16_t opcode;
 #define op  (opcode >> 12)
 #define x   ((opcode >> 8) & 0xF)
 #define y   ((opcode >> 4) & 0xF)
@@ -58,7 +65,7 @@ void load_rom(char *rom)
 {
 	// TODO: error handling
 	FILE *fp = fopen(rom, "rb");
-	fread(memory + PRG_START, 1, RAM_END - PRG_START, fp);
+	fread(memory + PRG_START, 1, sizeof(memory) - PRG_START, fp);
 	fclose(fp);
 }
 
@@ -68,6 +75,12 @@ void initialize()
 	pc = 0x200;
 	reg_I = 0;
 	memset(reg_V, 0, sizeof(reg_V));
+
+	SDL_Init(SDL_INIT_VIDEO);
+	SDL_CreateWindowAndRenderer(WINDOW_WIDTH, WINDOW_HEIGHT,
+			0, &window, &renderer);
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	SDL_RenderClear(renderer);
 }
 
 void fetch_opcode()
@@ -120,7 +133,7 @@ void draw_sprite()
 	for (int i = 0; i < n; i++){
 		uint64_t sprite = (uint64_t)memory[reg_I + i];
 		sprite = (col < 56) ? (sprite << (56 - col))
-			            : (sprite >> (col - 56));
+			: (sprite >> (col - 56));
 		if (display[row] & sprite)
 			reg_V[0xf] = 1;
 		display[row] ^= sprite;
@@ -132,13 +145,15 @@ void draw_sprite()
 
 void refresh()
 {
-	static char *table = " _^C";
-	for (int row = 0; row < 32; row += 2) {
-		for (int col = 63; col >= 0; col--) {
-			uint8_t t = (display[row] >> col) & 0x1;
-			uint8_t b = (display[row + 1] >> col) & 0x1;
-			putchar(table[(t << 1) | b]);
+	SDL_Rect rect;
+	for (int row = 0; row < 32; row++) {
+		for (int col = 0; col < 64; col++) {
+			int rgb = ((display[row] >> (63 - col)) & 0x1) ?
+				255 : 0;
+			SDL_SetRenderDrawColor(renderer, rgb, rgb, rgb, 255);
+			rect = (SDL_Rect){10 * col, 10 * row, 10, 10};
+			SDL_RenderFillRect(renderer, &rect);
 		}
-		putchar('\n');
 	}
+	SDL_RenderPresent(renderer);
 }
