@@ -1,5 +1,2 @@
-*.o
+obj/
 chip8
-
-# ROMs
-*.ch8
