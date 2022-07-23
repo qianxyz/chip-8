@@ -5,6 +5,7 @@
 
 #include "core.h"
 #include "display.h"
+#include "keypad.h"
 
 #define RAM_SIZE  0x1000  // 4096 Bytes
 #define PRG_START 0x200
@@ -38,15 +39,15 @@ int run_emulator(char *rom_path)
 	int ret;
 	ret = initialize_core();
 	ret = initialize_display();
+	ret = initialize_keypad();
 	ret = load_rom(rom_path);
 	// TODO: error handling from ret
 
-	for (;;) {
+	while (!quit) {
 		fetch_opcode();
 		execute_opcode();
 
-		if (0)  // TODO: some quit flag
-			break;
+		update_keypad();
 
 		usleep(1000 * 1000 / CPU_FREQ);
 	}
