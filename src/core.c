@@ -52,6 +52,8 @@ int run_emulator(char *rom_path)
 		usleep(1000 * 1000 / CPU_FREQ);
 	}
 
+	terminate_display();
+
 	return 0;
 }
 

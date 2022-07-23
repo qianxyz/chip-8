@@ -12,5 +12,6 @@ extern uint64_t display[];
 int initialize_display();
 void clear_display();
 void refresh_display();
+void terminate_display();
 
 #endif  // DISPLAY_H_
