@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>  // fixed length types
 #include <string.h>  // memset()
-#include <unistd.h>  // usleep
+#include <unistd.h>  // usleep()
 
 #include "core.h"
 #include "display.h"
@@ -13,10 +13,10 @@
 #define CPU_FREQ  10  // Hz
 
 // TODO: implement stack, timers and keypad
-static uint8_t  memory[RAM_SIZE];
-static uint16_t pc;     // program counter, an index of memory
-static uint16_t I;      // index register, an index of memory
-static uint8_t  V[16];  // variable registers
+uint8_t  memory[RAM_SIZE];
+uint16_t pc;     // program counter, an index of memory
+uint16_t I;      // index register, an index of memory
+uint8_t  V[16];  // variable registers
 
 static uint16_t opcode;
 /* Handy but dangerous macros. Use with care! */
@@ -31,8 +31,6 @@ static int initialize_core();
 static int load_rom(char *rom_path);
 static void fetch_opcode();
 static void execute_opcode();
-
-static void draw_sprite();
 
 int run_emulator(char *rom_path)
 {
@@ -108,31 +106,10 @@ void execute_opcode()
 		I = nnn;
 		break;
 	case 0xd:
-		draw_sprite();
+		V[0xf] = draw_sprite(V[x], V[y], memory + I, n);
 		break;
 	default:
 		printf("Not implemented: %.4x\n", opcode);
 		break;
 	}
-}
-
-void draw_sprite()
-{
-	uint8_t col = V[x] & (WIDTH - 1);
-	uint8_t row = V[y] & (HEIGHT - 1);
-	V[0xf] = 0;
-	for (int i = 0; i < n; i++){
-		uint64_t sprite = (uint64_t)memory[I + i];
-		if (col < WIDTH - 8)
-			sprite <<= (WIDTH - 8) - col;
-		else
-			sprite >>= col - (WIDTH - 8);
-		if (display[row] & sprite)
-			V[0xf] = 1;
-		display[row] ^= sprite;
-		row++;
-		if (row > HEIGHT - 1)
-			break;
-	}
-	refresh_display();
 }

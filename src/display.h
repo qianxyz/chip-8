@@ -3,15 +3,9 @@
 
 #include <stdint.h>
 
-/* The display size is not really configurable */
-#define WIDTH  64
-#define HEIGHT 32
-
-extern uint64_t display[];
-
 int initialize_display();
 void clear_display();
-void refresh_display();
+uint8_t draw_sprite(uint8_t col, uint8_t row, uint8_t *psprite, uint16_t n);
 void terminate_display();
 
 #endif  // DISPLAY_H_

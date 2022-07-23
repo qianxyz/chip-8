@@ -5,14 +5,21 @@
 
 #include "display.h"
 
+/* The display size is not really configurable */
+#define WIDTH  64
+#define HEIGHT 32
+
 #define PIXEL_SIZE    10
 #define WINDOW_WIDTH  (PIXEL_SIZE * WIDTH)
 #define WINDOW_HEIGHT (PIXEL_SIZE * HEIGHT)
 
-uint64_t display[HEIGHT];
+static uint64_t display[HEIGHT];
 
 static SDL_Window   *window;
 static SDL_Renderer *renderer;
+
+#define off() SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xff)
+#define on()  SDL_SetRenderDrawColor(renderer, 0xff, 0xff, 0xff, 0xff)
 
 int initialize_display()
 {
@@ -26,34 +33,45 @@ int initialize_display()
 void clear_display()
 {
 	memset(display, 0, sizeof(display));
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	off();
 	SDL_RenderClear(renderer);
 	SDL_RenderPresent(renderer);
 }
 
-/* TODO:
- * Currently `refresh_display` redraws the whole canvas.
- * Only redraw the part affected by `draw_sprite` to accelerate.
- */
-void refresh_display()
+uint8_t draw_sprite(uint8_t col, uint8_t row, uint8_t *psprite, uint16_t n)
 {
+	uint8_t collision = 0;
+	uint64_t sprite;
 	SDL_Rect rect;
-	for (int row = 0; row < HEIGHT; row++) {
-		for (int col = 0; col < WIDTH; col++) {
-			if ((display[row] >> (WIDTH - 1 - col)) & 0x1)
-				SDL_SetRenderDrawColor(
-						renderer, 255, 255, 255, 255);
-			else
-				SDL_SetRenderDrawColor(
-						renderer, 0, 0, 0, 255);
-			rect.x = PIXEL_SIZE * col;
+
+	row &= HEIGHT - 1;
+	col &= WIDTH - 1;
+	while (n-- > 0) {
+		sprite = *psprite++;
+		if (col < WIDTH - 8)
+			sprite <<= (WIDTH - 8) - col;
+		else
+			sprite >>= col - (WIDTH - 8);
+		if (display[row] & sprite)
+			collision = 1;
+		display[row] ^= sprite;
+
+		/* Redraw the affected slice */
+		for (uint8_t c = col; c < col + 8 && c < WIDTH; c++) {
+			((display[row] >> (WIDTH - 1 - c)) & 1) ? on() : off();
+			rect.x = PIXEL_SIZE * c;
 			rect.y = PIXEL_SIZE * row;
 			rect.w = PIXEL_SIZE;
 			rect.h = PIXEL_SIZE;
 			SDL_RenderFillRect(renderer, &rect);
 		}
+
+		if (++row >= HEIGHT)
+			break;
 	}
+
 	SDL_RenderPresent(renderer);
+	return collision;
 }
 
 void terminate_display()
