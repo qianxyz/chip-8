@@ -12,10 +12,10 @@
 #define CPU_FREQ  10  // Hz
 
 // TODO: implement stack, timers and keypad
-uint8_t  memory[RAM_SIZE];
-uint16_t pc;     // program counter, an index of memory
-uint16_t I;      // index register, an index of memory
-uint8_t  V[16];  // variable registers
+static uint8_t  memory[RAM_SIZE];
+static uint16_t pc;     // program counter, an index of memory
+static uint16_t I;      // index register, an index of memory
+static uint8_t  V[16];  // variable registers
 
 static uint16_t opcode;
 /* Handy but dangerous macros. Use with care! */

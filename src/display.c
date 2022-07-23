@@ -31,6 +31,10 @@ void clear_display()
 	SDL_RenderPresent(renderer);
 }
 
+/* TODO:
+ * Currently `refresh_display` redraws the whole canvas.
+ * Only redraw the part affected by `draw_sprite` to accelerate.
+ */
 void refresh_display()
 {
 	SDL_Rect rect;

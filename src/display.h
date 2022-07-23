@@ -1,6 +1,8 @@
 #ifndef DISPLAY_H_
 #define DISPLAY_H_
 
+#include <stdint.h>
+
 /* The display size is not really configurable */
 #define WIDTH  64
 #define HEIGHT 32
