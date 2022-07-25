@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>  // fixed length types
-#include <string.h>  // memset()
+#include <string.h>  // memset(), memcpy()
 #include <unistd.h>  // usleep()
 #include <stdlib.h>  // rand(), srand()
 #include <time.h>    // provide time for random seed
@@ -14,7 +14,7 @@
 
 #define CPU_FREQ  10  // Hz
 
-// TODO: implement timers and keypad
+// TODO: implement timers
 uint8_t  memory[RAM_SIZE];
 uint16_t pc;     // program counter, an index of memory
 uint16_t I;      // index register, an index of memory
@@ -46,6 +46,8 @@ int run_emulator(char *rom_path)
 
 	while (!is_quitting()) {
 		opcode = ((uint16_t)memory[pc] << 8) | memory[pc + 1];
+		// TODO: pretty print system info
+		printf("%.3x\t%.4x\n", pc, opcode);
 		pc += 2;  // NOTE: pc incremented here
 
 		if (execute_opcode())  // may fail due to stack flow
@@ -198,7 +200,62 @@ int execute_opcode()
 		V[0xf] = draw_sprite(V[x], V[y], memory + I, n);
 		break;
 	case 0xe:
+		switch (nn) {
+		case 0x9e:
+			if (is_keydown(V[x]))
+				pc += 2;
+			break;
+		case 0xa1:
+			if (!is_keydown(V[x]))
+				pc += 2;
+			break;
+		default:
+			printf("Not implemented: %.4x\n", opcode);
+			break;
+		}
+		break;
 	case 0xf:
+		switch (nn) {
+		case 0x07:
+		case 0x15:
+		case 0x18:
+			// TODO: timers
+			printf("Not implemented: %.4x\n", opcode);
+			break;
+		case 0x1e:
+			I += V[x];
+			V[0xf] = (I >= RAM_SIZE) ? 1 : 0;
+			break;
+		case 0x0a: ;
+			int tmp = get_key();
+			if (tmp == -1)
+				pc -= 2;
+			else
+				V[x] = tmp;
+			break;
+		case 0x29:
+			// TODO: font character
+			printf("Not implemented: %.4x\n", opcode);
+			break;
+		case 0x33:
+			/* tricky type conversion */
+			memory[I + 0] = V[x] / 100;
+			memory[I + 1] = (V[x] / 10) % 10;
+			memory[I + 2] = V[x] % 10;
+			break;
+		case 0x55:
+			/* WARN: ambiguous instruction */
+			memcpy(memory + I, V, x + 1);
+			break;
+		case 0x65:
+			/* WARN: ambiguous instruction */
+			memcpy(V, memory + I, x + 1);
+			break;
+		default:
+			printf("Not implemented: %.4x\n", opcode);
+			break;
+		}
+		break;
 	default:
 		printf("Not implemented: %.4x\n", opcode);
 		break;

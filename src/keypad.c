@@ -1,12 +1,38 @@
+#include <stdint.h>
+
 #include <SDL2/SDL.h>
 
 #include "keypad.h"
 
-static const Uint8 *key_state;
+static const Uint8 *keystate;
+
+/* 1 2 3 C    1 2 3 4
+ * 4 5 6 D    Q W E R
+ * 7 8 9 E -> A S D F
+ * A 0 B F    Z X C V
+ */
+static const SDL_Scancode keymap[] = {
+	SDL_SCANCODE_X,
+	SDL_SCANCODE_1,
+	SDL_SCANCODE_2,
+	SDL_SCANCODE_3,
+	SDL_SCANCODE_Q,
+	SDL_SCANCODE_W,
+	SDL_SCANCODE_E,
+	SDL_SCANCODE_A,
+	SDL_SCANCODE_S,
+	SDL_SCANCODE_D,
+	SDL_SCANCODE_Z,
+	SDL_SCANCODE_C,
+	SDL_SCANCODE_4,
+	SDL_SCANCODE_R,
+	SDL_SCANCODE_F,
+	SDL_SCANCODE_V,
+};
 
 int initialize_keypad()
 {
-	key_state = SDL_GetKeyboardState(NULL);
+	keystate = SDL_GetKeyboardState(NULL);
 
 	return 0;
 }
@@ -28,4 +54,21 @@ int is_quitting()
 	}
 
 	return 0;
+}
+
+int is_keydown(uint8_t keycode)
+{
+	SDL_PumpEvents();
+	return keystate[keymap[keycode]];
+}
+
+int get_key()
+{
+	SDL_PumpEvents();
+
+	int i;
+	for (i = 0; i < 16; i++)
+		if (keystate[keymap[i]])
+			return i;
+	return -1;
 }
