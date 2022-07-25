@@ -2,8 +2,6 @@
 
 #include "keypad.h"
 
-int quit = 0;
-
 static const Uint8 *key_state;
 
 int initialize_keypad()
@@ -13,9 +11,21 @@ int initialize_keypad()
 	return 0;
 }
 
-void update_keypad()
+int is_quitting()
 {
-	SDL_PumpEvents();
-	if (key_state[SDL_SCANCODE_ESCAPE])
-		quit = 1;
+	static SDL_Event event;
+
+	while (SDL_PollEvent(&event)) {
+		switch (event.type) {
+		case SDL_QUIT:  // click close button
+			return 1;
+		case SDL_KEYDOWN:  // press ESC key
+			if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
+				return 1;
+		default:
+			break;
+		}
+	}
+
+	return 0;
 }

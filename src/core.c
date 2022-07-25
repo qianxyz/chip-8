@@ -33,7 +33,6 @@ static uint16_t opcode;
 
 static int initialize_core();
 static int load_rom(char *rom_path);
-static void fetch_opcode();
 static int execute_opcode();
 
 int run_emulator(char *rom_path)
@@ -45,13 +44,12 @@ int run_emulator(char *rom_path)
 	ret = load_rom(rom_path);
 	// TODO: error handling from ret
 
-	while (!quit) {
-		fetch_opcode();
+	while (!is_quitting()) {
+		opcode = ((uint16_t)memory[pc] << 8) | memory[pc + 1];
+		pc += 2;  // NOTE: pc incremented here
 
 		if (execute_opcode())  // may fail due to stack flow
 			break;
-
-		update_keypad();
 
 		usleep(1000 * 1000 / CPU_FREQ);
 	}
@@ -63,9 +61,12 @@ int run_emulator(char *rom_path)
 
 int initialize_core()
 {
+	memset(memory, 0, sizeof(memory));
 	pc = PRG_START;
 	I = 0;
 	memset(V, 0, sizeof(V));
+	sp = 0;
+
 	srand(time(NULL));
 
 	return 0;
@@ -79,12 +80,6 @@ int load_rom(char *rom_path)
 	fclose(fp);
 
 	return 0;
-}
-
-void fetch_opcode()
-{
-	opcode = ((uint16_t)memory[pc] << 8) | memory[pc + 1];
-	pc += 2;  // NOTE: pc incremented here
 }
 
 int execute_opcode()
