@@ -5,7 +5,6 @@
 
 #include "display.h"
 
-/* The display size is not really configurable */
 #define WIDTH  64
 #define HEIGHT 32
 
@@ -27,6 +26,8 @@ int initialize_display()
 	SDL_Init(SDL_INIT_VIDEO);
 	SDL_CreateWindowAndRenderer(
 			WINDOW_WIDTH, WINDOW_HEIGHT, 0, &window, &renderer);
+
+	clear_display();
 	return 0;
 }
 
