@@ -11,16 +11,18 @@
 
 #define RAM_SIZE  0x1000  // 4096 Bytes
 #define PRG_START 0x200
+#define FNT_START 0x050   // font in 0x050 - 0x09f
 
 #define CPU_FREQ  10  // Hz
 
-// TODO: implement timers
 uint8_t  memory[RAM_SIZE];
 uint16_t pc;     // program counter, an index of memory
 uint16_t I;      // index register, an index of memory
 uint8_t  V[16];  // variable registers
 uint16_t stack[16];
 uint8_t  sp;     // stack pointer
+uint8_t  delay_timer;
+uint8_t  sound_timer;
 
 static uint16_t opcode;
 /* Handy but dangerous macros. Use with care! */
@@ -53,6 +55,12 @@ int run_emulator(char *rom_path)
 		if (execute_opcode())  // may fail due to stack flow
 			break;
 
+		// TODO: better timer update
+		if (delay_timer > 0)
+			delay_timer--;
+		if (sound_timer > 0)
+			sound_timer--;
+
 		usleep(1000 * 1000 / CPU_FREQ);
 	}
 
@@ -71,6 +79,27 @@ int initialize_core()
 
 	srand(time(NULL));
 
+	/* load fonts */
+	static const uint8_t fonts[] = {
+		0xF0, 0x90, 0x90, 0x90, 0xF0,  // 0
+		0x20, 0x60, 0x20, 0x20, 0x70,  // 1
+		0xF0, 0x10, 0xF0, 0x80, 0xF0,  // 2
+		0xF0, 0x10, 0xF0, 0x10, 0xF0,  // 3
+		0x90, 0x90, 0xF0, 0x10, 0x10,  // 4
+		0xF0, 0x80, 0xF0, 0x10, 0xF0,  // 5
+		0xF0, 0x80, 0xF0, 0x90, 0xF0,  // 6
+		0xF0, 0x10, 0x20, 0x40, 0x40,  // 7
+		0xF0, 0x90, 0xF0, 0x90, 0xF0,  // 8
+		0xF0, 0x90, 0xF0, 0x10, 0xF0,  // 9
+		0xF0, 0x90, 0xF0, 0x90, 0x90,  // A
+		0xE0, 0x90, 0xE0, 0x90, 0xE0,  // B
+		0xF0, 0x80, 0x80, 0x80, 0xF0,  // C
+		0xE0, 0x90, 0x90, 0x90, 0xE0,  // D
+		0xF0, 0x80, 0xF0, 0x80, 0xF0,  // E
+		0xF0, 0x80, 0xF0, 0x80, 0x80   // F
+	};
+	memcpy(memory + FNT_START, fonts, sizeof(fonts));
+
 	return 0;
 }
 
@@ -84,6 +113,10 @@ int load_rom(char *rom_path)
 	return 0;
 }
 
+/* The int return type is intended for error handling.
+ * However there are too many annoying boundary checks,
+ * so now it always return 0. Segfault all the way!
+ */
 int execute_opcode()
 {
 	switch (op) {
@@ -93,10 +126,7 @@ int execute_opcode()
 			clear_display();
 			break;
 		case 0x0ee:
-			if (sp == 0) {
-				// TODO: print error, empty stack
-				return 1;
-			}
+			/* stack may be empty */
 			pc = stack[--sp];
 			break;
 		default:
@@ -108,10 +138,7 @@ int execute_opcode()
 		pc = nnn;
 		break;
 	case 0x2:
-		if (sp > 0xf) {
-			// TODO: print error, stack overflow
-			return 1;
-		}
+		/* stack may overflow */
 		stack[sp++] = pc;
 		pc = nnn;
 		break;
@@ -217,10 +244,13 @@ int execute_opcode()
 	case 0xf:
 		switch (nn) {
 		case 0x07:
+			V[x] = delay_timer;
+			break;
 		case 0x15:
+			delay_timer = V[x];
+			break;
 		case 0x18:
-			// TODO: timers
-			printf("Not implemented: %.4x\n", opcode);
+			sound_timer = V[x];
 			break;
 		case 0x1e:
 			I += V[x];
@@ -234,8 +264,7 @@ int execute_opcode()
 				V[x] = tmp;
 			break;
 		case 0x29:
-			// TODO: font character
-			printf("Not implemented: %.4x\n", opcode);
+			I = FNT_START + (V[x] & 0xf) * 0x5;
 			break;
 		case 0x33:
 			/* tricky type conversion */
