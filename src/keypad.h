@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-int initialize_keypad();
+void initialize_keypad();
 int is_quitting();
 int is_keydown(uint8_t keycode);
 int get_key();

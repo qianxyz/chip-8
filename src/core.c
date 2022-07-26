@@ -13,7 +13,7 @@
 #define PRG_START 0x200
 #define FNT_START 0x050   // font in 0x050 - 0x09f
 
-#define CPU_FREQ  10  // Hz
+#define CPU_FREQ  300  // Hz
 
 uint8_t  memory[RAM_SIZE];
 uint16_t pc;     // program counter, an index of memory
@@ -33,19 +33,25 @@ static uint16_t opcode;
 #define nn  (opcode & 0xff)
 #define nnn (opcode & 0xfff)
 
-static int initialize_core();
+static void initialize_core();
 static int load_rom(char *rom_path);
 static int execute_opcode();
 
 int run_emulator(char *rom_path)
 {
-	int ret;
-	ret = initialize_core();
-	ret = initialize_display();
-	ret = initialize_keypad();
-	ret = load_rom(rom_path);
-	// TODO: error handling from ret
+	/* initialization */
+	initialize_core();
+	if (load_rom(rom_path)) {
+		// TODO: handle error fail to load rom
+		return 1;
+	}
+	if (initialize_display()) {
+		// TODO: handle error fail to init display
+		return 1;
+	}
+	initialize_keypad();
 
+	/* emulator loop */
 	while (!is_quitting()) {
 		opcode = ((uint16_t)memory[pc] << 8) | memory[pc + 1];
 		// TODO: pretty print system info
@@ -64,12 +70,13 @@ int run_emulator(char *rom_path)
 		usleep(1000 * 1000 / CPU_FREQ);
 	}
 
+	/* cleanup */
 	terminate_display();
 
 	return 0;
 }
 
-int initialize_core()
+void initialize_core()
 {
 	memset(memory, 0, sizeof(memory));
 	pc = PRG_START;
@@ -99,8 +106,6 @@ int initialize_core()
 		0xF0, 0x80, 0xF0, 0x80, 0x80   // F
 	};
 	memcpy(memory + FNT_START, fonts, sizeof(fonts));
-
-	return 0;
 }
 
 int load_rom(char *rom_path)

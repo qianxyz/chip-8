@@ -30,11 +30,9 @@ static const SDL_Scancode keymap[] = {
 	SDL_SCANCODE_V,
 };
 
-int initialize_keypad()
+void initialize_keypad()
 {
 	keystate = SDL_GetKeyboardState(NULL);
-
-	return 0;
 }
 
 int is_quitting()
