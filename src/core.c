@@ -5,6 +5,7 @@
 #include <stdlib.h>  // rand(), srand()
 #include <time.h>    // provide time for random seed
 
+#include "audio.h"
 #include "core.h"
 #include "display.h"
 #include "keypad.h"
@@ -21,8 +22,13 @@ uint16_t I;      // index register, an index of memory
 uint8_t  V[16];  // variable registers
 uint16_t stack[16];
 uint8_t  sp;     // stack pointer
-uint8_t  delay_timer;
-uint8_t  sound_timer;
+
+/* CHIP-8 originally uses 8-bit timers which decrease at 60 Hz.
+ * Since the cpu frequency is configurable, we have to use float type
+ * to scale properly and keep it at 60 Hz; This is mostly for sound quality.
+ */
+float delay_timer;
+float sound_timer;
 
 static uint16_t opcode;
 /* Handy but dangerous macros. Use with care! */
@@ -36,6 +42,7 @@ static uint16_t opcode;
 static void initialize_core();
 static int load_rom(char *rom_path);
 static int execute_opcode();
+static void update_timers();
 
 int run_emulator(char *rom_path)
 {
@@ -49,6 +56,10 @@ int run_emulator(char *rom_path)
 		// TODO: handle error fail to init display
 		return 1;
 	}
+	if (initialize_audio()) {
+		// TODO: handle error fail to init audio
+		return 1;
+	}
 	initialize_keypad();
 
 	/* emulator loop */
@@ -58,19 +69,14 @@ int run_emulator(char *rom_path)
 		printf("%.3x\t%.4x\n", pc, opcode);
 		pc += 2;  // NOTE: pc incremented here
 
-		if (execute_opcode())  // may fail due to stack flow
+		if (execute_opcode())
 			break;
 
-		// TODO: better timer update
-		if (delay_timer > 0)
-			delay_timer--;
-		if (sound_timer > 0)
-			sound_timer--;
-
-		usleep(1000 * 1000 / CPU_FREQ);
+		update_timers();  // also handles sleep
 	}
 
 	/* cleanup */
+	terminate_audio();
 	terminate_display();
 
 	return 0;
@@ -83,6 +89,8 @@ void initialize_core()
 	I = 0;
 	memset(V, 0, sizeof(V));
 	sp = 0;
+	delay_timer = 0;
+	sound_timer = 0;
 
 	srand(time(NULL));
 
@@ -272,7 +280,6 @@ int execute_opcode()
 			I = FNT_START + (V[x] & 0xf) * 0x5;
 			break;
 		case 0x33:
-			/* tricky type conversion */
 			memory[I + 0] = V[x] / 100;
 			memory[I + 1] = (V[x] / 10) % 10;
 			memory[I + 2] = V[x] % 10;
@@ -296,4 +303,21 @@ int execute_opcode()
 	}
 
 	return 0;
+}
+
+void update_timers()
+{
+	if (delay_timer > 0)
+		delay_timer -= 60.0f / CPU_FREQ;
+	else
+		delay_timer = 0;
+
+	/* beep() hangs, so either beep or sleep */
+	if (sound_timer > 0) {
+		beep(1000 / CPU_FREQ);
+		sound_timer -= 60.0f / CPU_FREQ;
+	} else {
+		sound_timer = 0;
+		usleep(1000 * 1000 / CPU_FREQ);
+	}
 }
