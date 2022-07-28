@@ -29,10 +29,13 @@ int initialize_audio()
 	return 0;
 }
 
-void beep(int duration)
+void open_audio()
 {
 	SDL_PauseAudio(0);
-	SDL_Delay(duration);
+}
+
+void close_audio()
+{
 	SDL_PauseAudio(1);
 }
 

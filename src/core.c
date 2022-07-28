@@ -72,7 +72,9 @@ int run_emulator(char *rom_path)
 		if (execute_opcode())
 			break;
 
-		update_timers();  // also handles sleep
+		update_timers();
+
+		usleep(1000 * 1000 / CPU_FREQ);
 	}
 
 	/* cleanup */
@@ -264,6 +266,7 @@ int execute_opcode()
 			break;
 		case 0x18:
 			sound_timer = V[x];
+			open_audio();
 			break;
 		case 0x1e:
 			I += V[x];
@@ -309,15 +312,13 @@ void update_timers()
 {
 	if (delay_timer > 0)
 		delay_timer -= 60.0f / CPU_FREQ;
-	else
+	if (delay_timer <= 0)
 		delay_timer = 0;
 
-	/* beep() hangs, so either beep or sleep */
-	if (sound_timer > 0) {
-		beep(1000 / CPU_FREQ);
+	if (sound_timer > 0)
 		sound_timer -= 60.0f / CPU_FREQ;
-	} else {
+	if (sound_timer <= 0) {
+		close_audio();
 		sound_timer = 0;
-		usleep(1000 * 1000 / CPU_FREQ);
 	}
 }
