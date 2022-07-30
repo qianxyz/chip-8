@@ -14,8 +14,6 @@
 #define PRG_START 0x200
 #define FNT_START 0x050   // font in 0x050 - 0x09f
 
-#define CPU_FREQ  300  // Hz
-
 uint8_t  memory[RAM_SIZE];
 uint16_t pc;     // program counter, an index of memory
 uint16_t I;      // index register, an index of memory
@@ -41,10 +39,10 @@ static uint16_t opcode;
 
 static void initialize_core();
 static int load_rom(char *rom_path);
-static int execute_opcode();
-static void update_timers();
+static int execute_opcode(int original);
+static void update_timers(int freq);
 
-int run_emulator(char *rom_path)
+int run_emulator(char *rom_path, int freq, int original, int verbose)
 {
 	/* initialization */
 	initialize_core();
@@ -63,18 +61,22 @@ int run_emulator(char *rom_path)
 	initialize_keypad();
 
 	/* emulator loop */
+	// TODO: freq can be 0 to enable step mode
+	// in which case is_quitting should be modified to block
 	while (!is_quitting()) {
 		opcode = ((uint16_t)memory[pc] << 8) | memory[pc + 1];
-		// TODO: pretty print system info
-		printf("%.3x\t%.4x\n", pc, opcode);
+		if (verbose) {
+			// TODO: pretty print system info
+			printf("%.3x\t%.4x\n", pc, opcode);
+		}
 		pc += 2;  // NOTE: pc incremented here
 
-		if (execute_opcode())
+		if (execute_opcode(original))
 			break;
 
-		update_timers();
+		update_timers(freq);
 
-		usleep(1000 * 1000 / CPU_FREQ);
+		usleep(1000 * 1000 / freq);
 	}
 
 	/* cleanup */
@@ -132,7 +134,7 @@ int load_rom(char *rom_path)
  * However there are too many annoying boundary checks,
  * so now it always return 0. Segfault all the way!
  */
-int execute_opcode()
+int execute_opcode(int original)
 {
 	switch (op) {
 	case 0x0:
@@ -203,6 +205,8 @@ int execute_opcode()
 			break;
 		case 0x6:
 			/* WARN: ambiguous instruction */
+			if (original)
+				V[x] = V[y];
 			V[0xf] = V[x] & 1;
 			V[x] >>= 1;
 			break;
@@ -212,6 +216,8 @@ int execute_opcode()
 			break;
 		case 0xe:
 			/* WARN: ambiguous instruction */
+			if (original)
+				V[x] = V[y];
 			V[0xf] = (V[x] >> 7) & 1;
 			V[x] <<= 1;
 			break;
@@ -233,7 +239,10 @@ int execute_opcode()
 		break;
 	case 0xb:
 		/* WARN: ambiguous instruction */
-		pc = nnn + V[0x0];
+		if (original)
+			pc = nnn + V[0x0];
+		else
+			pc = nnn + V[x];
 		break;
 	case 0xc:
 		V[x] = nn & (uint8_t)rand();
@@ -290,10 +299,14 @@ int execute_opcode()
 		case 0x55:
 			/* WARN: ambiguous instruction */
 			memcpy(memory + I, V, x + 1);
+			if (original)
+				I += x + 1;
 			break;
 		case 0x65:
 			/* WARN: ambiguous instruction */
 			memcpy(V, memory + I, x + 1);
+			if (original)
+				I += x + 1;
 			break;
 		default:
 			printf("Not implemented: %.4x\n", opcode);
@@ -308,15 +321,16 @@ int execute_opcode()
 	return 0;
 }
 
-void update_timers()
+void update_timers(int freq)
 {
+	// TODO: when freq is 0
 	if (delay_timer > 0)
-		delay_timer -= 60.0f / CPU_FREQ;
+		delay_timer -= 60.0f / freq;
 	if (delay_timer <= 0)
 		delay_timer = 0;
 
 	if (sound_timer > 0)
-		sound_timer -= 60.0f / CPU_FREQ;
+		sound_timer -= 60.0f / freq;
 	if (sound_timer <= 0) {
 		close_audio();
 		sound_timer = 0;
