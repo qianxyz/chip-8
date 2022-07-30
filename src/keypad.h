@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 void initialize_keypad();
-int is_quitting();
+int is_quitting(int freq);
 int is_keydown(uint8_t keycode);
 int get_key();
 

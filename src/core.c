@@ -61,9 +61,7 @@ int run_emulator(char *rom_path, int freq, int original, int verbose)
 	initialize_keypad();
 
 	/* emulator loop */
-	// TODO: freq can be 0 to enable step mode
-	// in which case is_quitting should be modified to block
-	while (!is_quitting()) {
+	while (!is_quitting(freq)) {
 		opcode = ((uint16_t)memory[pc] << 8) | memory[pc + 1];
 		if (verbose) {
 			// TODO: pretty print system info
@@ -76,7 +74,8 @@ int run_emulator(char *rom_path, int freq, int original, int verbose)
 
 		update_timers(freq);
 
-		usleep(1000 * 1000 / freq);
+		if (freq > 0)
+			usleep(1000 * 1000 / freq);
 	}
 
 	/* cleanup */
@@ -323,7 +322,12 @@ int execute_opcode(int original)
 
 void update_timers(int freq)
 {
-	// TODO: when freq is 0
+	/* timers do NOT work at step mode (freq = 0) */
+	if (freq == 0) {
+		delay_timer = 0;
+		sound_timer = 0;
+	}
+
 	if (delay_timer > 0)
 		delay_timer -= 60.0f / freq;
 	if (delay_timer <= 0)

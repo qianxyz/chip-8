@@ -35,17 +35,27 @@ void initialize_keypad()
 	keystate = SDL_GetKeyboardState(NULL);
 }
 
-int is_quitting()
+int is_quitting(int freq)
 {
 	static SDL_Event event;
 
-	while (SDL_PollEvent(&event)) {
+	for (;;) {
+		if (!SDL_PollEvent(&event) && freq > 0)
+			break;
 		switch (event.type) {
 		case SDL_QUIT:  // click close button
 			return 1;
-		case SDL_KEYDOWN:  // press ESC key
-			if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
+		case SDL_KEYDOWN:
+			switch (event.key.keysym.scancode) {
+			case SDL_SCANCODE_ESCAPE:
 				return 1;
+			case SDL_SCANCODE_RETURN:
+				if (freq == 0)
+					return 0;
+				break;
+			default:
+				break;
+			}
 		default:
 			break;
 		}
