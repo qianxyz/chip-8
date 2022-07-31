@@ -64,6 +64,7 @@ int run_emulator(char *rom_path, int freq, int original, int verbose)
 	while (!is_quitting(freq)) {
 		opcode = ((uint16_t)memory[pc] << 8) | memory[pc + 1];
 		if (verbose) {
+			// TODO: print more system info
 			printf("[INFO] pc: %.3x, opcode: %.4x\n", pc, opcode);
 		}
 		pc += 2;  // NOTE: pc incremented here

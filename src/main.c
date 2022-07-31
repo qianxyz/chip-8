@@ -6,7 +6,7 @@
 
 static const char *help =
 	"Usage: chip8 [options] <path/to/rom>\n"
-	" -f <freq>  Set cpu frequency in Hz\n"
+	" -f <freq>  Set cpu frequency in Hz (0 for step mode)\n"
 	" -h         Display this help\n"
 	" -o         Use original COSMAC VIP behavior\n"
 	" -v         Show more debug messages\n";
