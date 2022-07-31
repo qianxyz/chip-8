@@ -22,10 +22,16 @@ static SDL_Renderer *renderer;
 
 int initialize_display()
 {
-	// TODO: serious error handling
-	SDL_Init(SDL_INIT_VIDEO);
-	SDL_CreateWindowAndRenderer(
-			WINDOW_WIDTH, WINDOW_HEIGHT, 0, &window, &renderer);
+	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+		printf("[ERROR] cannot initialize SDL: %s\n", SDL_GetError());
+		return 1;
+	}
+	if (SDL_CreateWindowAndRenderer(
+			WINDOW_WIDTH, WINDOW_HEIGHT, 0, &window, &renderer)) {
+		printf("[ERROR] cannot create window and renderer: %s\n",
+				SDL_GetError());
+		return 1;
+	}
 
 	clear_display();
 	return 0;

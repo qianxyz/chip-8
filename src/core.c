@@ -47,15 +47,15 @@ int run_emulator(char *rom_path, int freq, int original, int verbose)
 	/* initialization */
 	initialize_core();
 	if (load_rom(rom_path)) {
-		// TODO: handle error fail to load rom
+		printf("[ERROR] failed to load rom\n");
 		return 1;
 	}
 	if (initialize_display()) {
-		// TODO: handle error fail to init display
+		printf("[ERROR] failed to initialize display\n");
 		return 1;
 	}
 	if (initialize_audio()) {
-		// TODO: handle error fail to init audio
+		printf("[ERROR] failed to initialize audio\n");
 		return 1;
 	}
 	initialize_keypad();
@@ -64,8 +64,7 @@ int run_emulator(char *rom_path, int freq, int original, int verbose)
 	while (!is_quitting(freq)) {
 		opcode = ((uint16_t)memory[pc] << 8) | memory[pc + 1];
 		if (verbose) {
-			// TODO: pretty print system info
-			printf("%.3x\t%.4x\n", pc, opcode);
+			printf("[INFO] pc: %.3x, opcode: %.4x\n", pc, opcode);
 		}
 		pc += 2;  // NOTE: pc incremented here
 
@@ -121,8 +120,11 @@ void initialize_core()
 
 int load_rom(char *rom_path)
 {
-	// TODO: error handling
 	FILE *fp = fopen(rom_path, "rb");
+	if (!fp) {
+		printf("[ERROR] cannot open file %s\n", rom_path);
+		return 1;
+	}
 	fread(memory + PRG_START, 1, sizeof(memory) - PRG_START, fp);
 	fclose(fp);
 
@@ -146,7 +148,7 @@ int execute_opcode(int original)
 			pc = stack[--sp];
 			break;
 		default:
-			printf("Not implemented: %.4x\n", opcode);
+			printf("[WARNING] unknown opcode: %.4x\n", opcode);
 			break;
 		}
 		break;
@@ -171,7 +173,7 @@ int execute_opcode(int original)
 			if (V[x] == V[y])
 				pc += 2;
 		} else {
-			printf("Not implemented: %.4x\n", opcode);
+			printf("[WARNING] unknown opcode: %.4x\n", opcode);
 		}
 		break;
 	case 0x6:
@@ -221,7 +223,7 @@ int execute_opcode(int original)
 			V[x] <<= 1;
 			break;
 		default:
-			printf("Not implemented: %.4x\n", opcode);
+			printf("[WARNING] unknown opcode: %.4x\n", opcode);
 			break;
 		}
 		break;
@@ -230,7 +232,7 @@ int execute_opcode(int original)
 			if (V[x] != V[y])
 				pc += 2;
 		} else {
-			printf("Not implemented: %.4x\n", opcode);
+			printf("[WARNING] unknown opcode: %.4x\n", opcode);
 		}
 		break;
 	case 0xa:
@@ -260,7 +262,7 @@ int execute_opcode(int original)
 				pc += 2;
 			break;
 		default:
-			printf("Not implemented: %.4x\n", opcode);
+			printf("[WARNING] unknown opcode: %.4x\n", opcode);
 			break;
 		}
 		break;
@@ -308,12 +310,12 @@ int execute_opcode(int original)
 				I += x + 1;
 			break;
 		default:
-			printf("Not implemented: %.4x\n", opcode);
+			printf("[WARNING] unknown opcode: %.4x\n", opcode);
 			break;
 		}
 		break;
 	default:
-		printf("Not implemented: %.4x\n", opcode);
+		printf("[WARNING] unknown opcode: %.4x\n", opcode);
 		break;
 	}
 
