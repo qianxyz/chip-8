@@ -9,6 +9,7 @@
 #include "core.h"
 #include "display.h"
 #include "keypad.h"
+#include "args.h"
 
 #define RAM_SIZE  0x1000  // 4096 Bytes
 #define PRG_START 0x200
@@ -38,15 +39,15 @@ static uint16_t opcode;
 #define nnn (opcode & 0xfff)
 
 static void initialize_core();
-static int load_rom(char *rom_path);
-static int execute_opcode(int original);
-static void update_timers(int freq);
+static int load_rom();
+static int execute_opcode();
+static void update_timers();
 
-int run_emulator(char *rom_path, int freq, int original, int verbose)
+int run_emulator()
 {
 	/* initialization */
 	initialize_core();
-	if (load_rom(rom_path)) {
+	if (load_rom()) {
 		printf("[ERROR] failed to load rom\n");
 		return 1;
 	}
@@ -61,7 +62,7 @@ int run_emulator(char *rom_path, int freq, int original, int verbose)
 	initialize_keypad();
 
 	/* emulator loop */
-	while (!is_quitting(freq)) {
+	while (!is_quitting()) {
 		opcode = ((uint16_t)memory[pc] << 8) | memory[pc + 1];
 		if (verbose) {
 			// TODO: print more system info
@@ -69,10 +70,10 @@ int run_emulator(char *rom_path, int freq, int original, int verbose)
 		}
 		pc += 2;  // NOTE: pc incremented here
 
-		if (execute_opcode(original))
+		if (execute_opcode())
 			break;
 
-		update_timers(freq);
+		update_timers();
 
 		if (freq > 0)
 			usleep(1000 * 1000 / freq);
@@ -119,7 +120,7 @@ void initialize_core()
 	memcpy(memory + FNT_START, fonts, sizeof(fonts));
 }
 
-int load_rom(char *rom_path)
+int load_rom()
 {
 	FILE *fp = fopen(rom_path, "rb");
 	if (!fp) {
@@ -136,7 +137,7 @@ int load_rom(char *rom_path)
  * However there are too many annoying boundary checks,
  * so now it always return 0. Segfault all the way!
  */
-int execute_opcode(int original)
+int execute_opcode()
 {
 	switch (op) {
 	case 0x0:
@@ -323,7 +324,7 @@ int execute_opcode(int original)
 	return 0;
 }
 
-void update_timers(int freq)
+void update_timers()
 {
 	/* timers do NOT work at step mode (freq = 0) */
 	if (freq == 0) {

@@ -3,6 +3,7 @@
 #include <SDL2/SDL.h>
 
 #include "keypad.h"
+#include "args.h"
 
 static const Uint8 *keystate;
 
@@ -35,7 +36,7 @@ void initialize_keypad()
 	keystate = SDL_GetKeyboardState(NULL);
 }
 
-int is_quitting(int freq)
+int is_quitting()
 {
 	static SDL_Event event;
 

@@ -3,6 +3,12 @@
 #include <unistd.h>  // getopt
 
 #include "core.h"
+#include "args.h"
+
+int freq = 300;  // Hz
+int original = 0;  // use modern behavior
+int verbose = 0;
+char *rom_path;
 
 static const char *help =
 	"Usage: chip8 [options] <path/to/rom>\n"
@@ -13,14 +19,6 @@ static const char *help =
 
 int main(int argc, char *argv[])
 {
-	int freq, original, verbose;
-	char *rom_path;
-
-	/* default */
-	freq = 300;  // Hz
-	original = 0;  // use modern behavior
-	verbose = 0;
-
 	int opt;
 	while ((opt = getopt(argc, argv, "f:ovh")) != -1) {
 		switch (opt) {
@@ -29,7 +27,7 @@ int main(int argc, char *argv[])
 			if (freq < 0) {
 				fprintf(stderr, "%s: invalid frequency %d\n",
 						argv[0], freq);
-				fprintf(stderr, help);
+				fprintf(stderr, "%s", help);
 				return 1;
 			}
 			break;
@@ -40,10 +38,10 @@ int main(int argc, char *argv[])
 			verbose = 1;
 			break;
 		case 'h':
-			fprintf(stdout, help);
+			fprintf(stdout, "%s", help);
 			return 0;
 		default:
-			fprintf(stderr, help);
+			fprintf(stderr, "%s", help);
 			return 1;
 		}
 	}
@@ -53,13 +51,13 @@ int main(int argc, char *argv[])
 				"%s: expect argument after options\n" :
 				"%s: too many arguments\n",
 				argv[0]);
-		fprintf(stderr, help);
+		fprintf(stderr, "%s", help);
 		return 1;
 	}
 
 	rom_path = argv[optind];
 
-	run_emulator(rom_path, freq, original, verbose);
+	run_emulator();
 
 	return 0;
 }
