@@ -2,7 +2,9 @@
 
 #include "audio.h"
 
-#define SAMPLE_FREQ 48000
+#define SAMPLE_RATE 44100
+#define AMPLITUDE 28000
+#define FREQUENCY 440
 
 static SDL_AudioSpec want, have;
 
@@ -15,12 +17,12 @@ int initialize_audio()
 		return 1;
 	}
 
-	want.freq = SAMPLE_FREQ;
-	want.format = AUDIO_F32;
+	SDL_memset(&want, 0, sizeof(want));
+	want.freq = SAMPLE_RATE;
+	want.format = AUDIO_S16SYS;
 	want.channels = 1;
-	want.samples = 8192;
+	want.samples = 4096;
 	want.callback = audio_callback;
-	want.userdata = NULL;
 
 	if(SDL_OpenAudio(&want, &have) != 0) {
 		printf("[ERROR] cannot open audio: %s\n", SDL_GetError());
@@ -49,11 +51,19 @@ void terminate_audio()
 	SDL_CloseAudio();
 }
 
-static void audio_callback(void *unused, Uint8 *buffer, int bytes)
+static void audio_callback(void *unused, Uint8 *stream, int len)
 {
 	(void)unused;
-	for(int i = 0; i < bytes; i++)
-	{
-		buffer[i] = i;
+	static double phase = 0.0;
+	double phase_increment = 2.0 * M_PI * FREQUENCY / SAMPLE_RATE;
+	Sint16 *buffer = (Sint16 *)stream;
+	int length = len / 2; // 2 bytes per sample for AUDIO_S16SYS
+
+	for (int i = 0; i < length; i++) {
+		buffer[i] = (Sint16)(AMPLITUDE * sin(phase));
+		phase += phase_increment;
+		if (phase >= 2.0 * M_PI) {
+			phase -= 2.0 * M_PI;
+		}
 	}
 }

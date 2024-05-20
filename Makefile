@@ -6,7 +6,7 @@ SRC := $(wildcard $(SRC_DIR)/*.c)
 OBJ := $(SRC:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
 CFLAGS  := -Wall -Wextra -pedantic
-LDFLAGS := $(shell sdl2-config --cflags --libs)
+LDFLAGS := $(shell sdl2-config --cflags --libs) -lm
 
 .PHONY: all clean
 
