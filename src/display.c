@@ -63,18 +63,22 @@ uint8_t draw_sprite(uint8_t col, uint8_t row, uint8_t *psprite, uint16_t n)
 			collision = 1;
 		display[row] ^= sprite;
 
-		/* Redraw the affected slice */
-		for (uint8_t c = col; c < col + 8 && c < WIDTH; c++) {
-			((display[row] >> (WIDTH - 1 - c)) & 1) ? on() : off();
-			rect.x = PIXEL_SIZE * c;
+		if (++row >= HEIGHT)
+			break;
+	}
+
+	/* Redraw the whole frame */
+	off();
+	SDL_RenderClear(renderer);
+	for (row = 0; row < HEIGHT; row++) {
+		for (col = 0; col < WIDTH; col++) {
+			((display[row] >> (WIDTH - 1 - col)) & 1) ? on() : off();
+			rect.x = PIXEL_SIZE * col;
 			rect.y = PIXEL_SIZE * row;
 			rect.w = PIXEL_SIZE;
 			rect.h = PIXEL_SIZE;
 			SDL_RenderFillRect(renderer, &rect);
 		}
-
-		if (++row >= HEIGHT)
-			break;
 	}
 
 	SDL_RenderPresent(renderer);
