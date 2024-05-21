@@ -24,4 +24,8 @@ $(OBJ_DIR):
 clean :
 	rm -rv $(EXE) $(OBJ_DIR)
 
+web:
+	mkdir -p www
+	emcc $(SRC) -o www/index.js -s USE_SDL=2 --preload-file rom/
+
 -include $(OBJ:.o=.d)
