@@ -1,3 +1,4 @@
 obj/
 chip8
-www/
+www/*
+!www/index.html

@@ -78,10 +78,17 @@ void run_emulator()
 {
 	/* initialization */
 	initialize_core();
+#ifdef __EMSCRIPTEN__
+	/* Path is not specified, write opcode 0x1200 to memory 0x200
+	 * so that the emulator loops indefinitely. */
+	memory[PRG_START] = 0x12;
+	memory[PRG_START + 1] = 0x00;
+#else
 	if (load_rom()) {
 		printf("[ERROR] failed to load rom\n");
 		exit(1);
 	}
+#endif /* ifdef __EMSCRIPTEN__ */
 	if (initialize_display()) {
 		printf("[ERROR] failed to initialize display\n");
 		exit(1);
@@ -137,6 +144,16 @@ void initialize_core()
 	};
 	memcpy(memory + FNT_START, fonts, sizeof(fonts));
 }
+
+#ifdef __EMSCRIPTEN__
+int reload_rom(char *path)
+{
+	rom_path = path;
+	initialize_core(); // reset VM state
+	clear_display();
+	return load_rom();
+}
+#endif /* ifdef __EMSCRIPTEN__ */
 
 int load_rom()
 {

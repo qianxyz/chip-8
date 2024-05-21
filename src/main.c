@@ -8,7 +8,7 @@
 int freq = 300;  // Hz
 int original = 0;  // use modern behavior
 int verbose = 0;
-char *rom_path;
+char *rom_path = NULL;
 
 static const char *help =
 	"Usage: chip8 [options] <path/to/rom>\n"
@@ -19,10 +19,7 @@ static const char *help =
 
 int main(int argc, char *argv[])
 {
-#ifdef __EMSCRIPTEN__
-	// TODO: Select ROM file
-	rom_path = "rom/pong.ch8";
-#else
+#ifndef __EMSCRIPTEN__
 	int opt;
 	while ((opt = getopt(argc, argv, "f:ovh")) != -1) {
 		switch (opt) {
@@ -60,7 +57,7 @@ int main(int argc, char *argv[])
 	}
 
 	rom_path = argv[optind];
-#endif /* ifdef __EMSCRIPTEN__ */
+#endif /* ifndef __EMSCRIPTEN__ */
 
 	run_emulator();
 

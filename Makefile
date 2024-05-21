@@ -26,6 +26,10 @@ clean :
 
 web:
 	mkdir -p www
-	emcc $(SRC) -o www/index.js -s USE_SDL=2 --preload-file rom/
+	emcc $(SRC) -o www/index.js \
+		-s USE_SDL=2 \
+		-s EXPORTED_FUNCTIONS=_main,_reload_rom \
+		-s EXPORTED_RUNTIME_METHODS=ccall,cwrap \
+		--preload-file rom/
 
 -include $(OBJ:.o=.d)
