@@ -356,7 +356,11 @@ void update_timers()
 		delay_timer = 0;
 
 	if (sound_timer > 0)
-		sound_timer -= 60.0f / freq;
+		/* The sound timer is supposed to decrease by 60 every second
+		 * but sometimes the interval is too narrow for SDL to react,
+		 * resulting in no sound. Here we essentially double the length
+		 * of beeps to make beeps more noticeable. */
+		sound_timer -= 30.0f / freq;
 	if (sound_timer <= 0) {
 		close_audio();
 		sound_timer = 0;

@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
 {
 #ifdef __EMSCRIPTEN__
 	// TODO: Select ROM file
-	rom_path = "rom/opcode_test.ch8";
+	rom_path = "rom/pong.ch8";
 #else
 	int opt;
 	while ((opt = getopt(argc, argv, "f:ovh")) != -1) {
