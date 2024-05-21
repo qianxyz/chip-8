@@ -162,11 +162,9 @@
         <option value="tetris">Tetris</option>
       </select>
     </span>
-    <span><input type="checkbox" id="resize">Resize canvas</span>
-    <span><input type="checkbox" id="pointerLock" checked>Lock/hide mouse pointer &nbsp;&nbsp;&nbsp;</span>
-    <span><input type="button" value="Fullscreen"
-        onclick="Module.requestFullscreen(document.getElementById('pointerLock').checked, 
-                                                                                document.getElementById('resize').checked)">
+    <span>
+      <label for="romUpload">Or upload your own ROM:</label>
+      <input type="file" id="romUpload" accept=".ch8">
     </span>
   </span>
 
@@ -188,16 +186,44 @@
       // cwrap is defined when the runtime is initialized
       onRuntimeInitialized: function () {
         var reloadRom = Module.cwrap('reload_rom', 'number', ['string']);
-        var romSelect = document.getElementById('rom');
-        if (romSelect.value !== '') {
-          // wait for the vm to start
-          setTimeout(() => reloadRom(`rom/${romSelect.value}.ch8`), 500);
-        }
-        romSelect.addEventListener('change', function () {
-          reloadRom(`rom/${romSelect.value}.ch8`);
-        });
 
-        Module.print('Welcome to CHIP-8 emulator! Select a ROM from the header to start.');
+        var romSelect = document.getElementById('rom');
+        function reloadRomFromSelect() {
+          if (romSelect.value !== '') {
+            reloadRom(`rom/${romSelect.value}.ch8`);
+          }
+        }
+
+        var romUpload = document.getElementById('romUpload');
+        function reloadRomFromUpload() {
+          if (romUpload.files.length > 0) {
+            var file = romUpload.files[0];
+            var reader = new FileReader();
+            reader.onload = function (e) {
+              var data = new Uint8Array(e.target.result);
+              FS.writeFile('rom.ch8', data, {encoding: 'binary'});
+              reloadRom('rom.ch8');
+            };
+            reader.readAsArrayBuffer(file);
+          }
+        }
+
+        // select preloaded rom
+        romSelect.addEventListener('change', reloadRomFromSelect);
+        // upload rom
+        romUpload.addEventListener('change', reloadRomFromUpload);
+
+        // load rom for the first time
+        setTimeout(function () {
+          if (romUpload.files.length > 0) {
+            reloadRomFromUpload();
+          } else if (romSelect.value !== '') {
+            reloadRomFromSelect();
+          }
+        }, 500);
+
+        // helper text
+        Module.print('Welcome to CHIP-8 emulator! Select a ROM or upload your own ROM from the header to start.');
         Module.print(`Controls: (A physical keyboard is required)
     QWERTY keyboard    CHIP-8 keypad
         1 2 3 4           1 2 3 C
@@ -205,8 +231,8 @@
         A S D F           7 8 9 E
         Z X C V           A 0 B F`);
         Module.print('The controls for individual games are not documented. You may need to experiment.');
-        // TODO: upload ROM
       },
+
       print: (function () {
         var element = document.getElementById('output');
         if (element) element.value = ''; // clear browser cache
