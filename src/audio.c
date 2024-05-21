@@ -28,10 +28,11 @@ int initialize_audio()
 		printf("[ERROR] cannot open audio: %s\n", SDL_GetError());
 		return 1;
 	}
-	if(want.format != have.format) {
-		printf("[ERROR] cannot get the desired AudioSpec\n");
-		return 1;
-	}
+	// TODO: Bring audio back
+	// if(want.format != have.format) {
+	// 	printf("[ERROR] cannot get the desired AudioSpec\n");
+	// 	return 1;
+	// }
 
 	return 0;
 }

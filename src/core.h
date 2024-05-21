@@ -1,6 +1,6 @@
 #ifndef CORE_H_
 #define CORE_H_
 
-int run_emulator();
+void run_emulator();
 
 #endif  // CORE_H_

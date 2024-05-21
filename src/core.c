@@ -5,6 +5,10 @@
 #include <stdlib.h>  // rand(), srand()
 #include <time.h>    // provide time for random seed
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 #include "audio.h"
 #include "core.h"
 #include "display.h"
@@ -43,47 +47,61 @@ static int load_rom();
 static int execute_opcode();
 static void update_timers();
 
-int run_emulator()
+static void main_loop()
+{
+	if (is_quitting()) {
+		/* cleanup */
+		terminate_audio();
+		terminate_display();
+#ifdef __EMSCRIPTEN__
+		emscripten_cancel_main_loop();
+#else
+		exit(0);
+#endif /* ifdef __EMSCRIPTEN__ */
+	}
+
+	opcode = ((uint16_t)memory[pc] << 8) | memory[pc + 1];
+	if (verbose) {
+		// TODO: print more system info
+		printf("[INFO] pc: %.3x, opcode: %.4x\n", pc, opcode);
+	}
+	pc += 2;  // NOTE: pc incremented here
+
+	if (execute_opcode()) {
+		exit(1);
+	};
+
+	update_timers();
+}
+
+void run_emulator()
 {
 	/* initialization */
 	initialize_core();
 	if (load_rom()) {
 		printf("[ERROR] failed to load rom\n");
-		return 1;
+		exit(1);
 	}
 	if (initialize_display()) {
 		printf("[ERROR] failed to initialize display\n");
-		return 1;
+		exit(1);
 	}
 	if (initialize_audio()) {
 		printf("[ERROR] failed to initialize audio\n");
-		return 1;
+		exit(1);
 	}
 	initialize_keypad();
 
-	/* emulator loop */
-	while (!is_quitting()) {
-		opcode = ((uint16_t)memory[pc] << 8) | memory[pc + 1];
-		if (verbose) {
-			// TODO: print more system info
-			printf("[INFO] pc: %.3x, opcode: %.4x\n", pc, opcode);
-		}
-		pc += 2;  // NOTE: pc incremented here
-
-		if (execute_opcode())
-			break;
-
-		update_timers();
+#ifdef __EMSCRIPTEN__
+	emscripten_set_main_loop(main_loop, 0, 1);
+#else
+	while (1) {
+		main_loop();
 
 		if (freq > 0)
 			usleep(1000 * 1000 / freq);
 	}
-
-	/* cleanup */
-	terminate_audio();
-	terminate_display();
-
-	return 0;
+#endif /* ifdef __EMSCRIPTEN__ */
 }
 
 void initialize_core()

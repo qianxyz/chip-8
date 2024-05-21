@@ -19,6 +19,10 @@ static const char *help =
 
 int main(int argc, char *argv[])
 {
+#ifdef __EMSCRIPTEN__
+	// TODO: Select ROM file
+	rom_path = "rom/opcode_test.ch8";
+#else
 	int opt;
 	while ((opt = getopt(argc, argv, "f:ovh")) != -1) {
 		switch (opt) {
@@ -56,6 +60,7 @@ int main(int argc, char *argv[])
 	}
 
 	rom_path = argv[optind];
+#endif /* ifdef __EMSCRIPTEN__ */
 
 	run_emulator();
 
