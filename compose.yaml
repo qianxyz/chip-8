@@ -1,0 +1,5 @@
+services:
+  chip-8:
+    build: .
+    ports:
+      - "8082:80"

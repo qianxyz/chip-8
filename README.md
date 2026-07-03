@@ -11,6 +11,9 @@ ROM, or run with the `-h` flag to see the help message.
 
 Run `make web`. The output files will be in the `www` directory.
 
+Or run `docker compose up` to build and serve it at `localhost:8082`,
+no local Emscripten needed.
+
 ## References
 
 - [Compiling an SDL2 Game to WASM](https://dev.to/mattconn/compiling-an-sdl2-game-to-wasm-42fj)
